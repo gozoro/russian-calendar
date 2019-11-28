@@ -1,8 +1,13 @@
 <?php
 
-namespace calendar;
+namespace russian_calendar;
 
-
+/**
+ * Класс производственного календаря РФ.
+ * Класс работает с календарем с сайта xmlcalendar.ru
+ *
+ * @author gozoro <gozoro@yandex.ru>
+ */
 class RussianCalendar
 {
 	/**
@@ -39,17 +44,39 @@ class RussianCalendar
 	 */
 	private $data;
 
+	/**
+	 * Хранит путь к директории для кэша xml-файлов
+	 * @var string
+	 */
 	private $cacheFolder;
-	private $cacheEnable = false;
+
+	/**
+	 * Время хранения кэша в секундах
+	 * @var int
+	 */
+	private $cacheDuration = 0;
 
 
-
-	public function __construct($locale = self::LOCALE_RU, $cacheFolder = null)
+	/**
+	 * Класс производственного календаря РФ.
+	 * @param string $locale
+	 * @param string|null $cacheFolder путь к директории для локального кэша xml-файлов календаря
+	 * @param int $cacheDuration время кэширования xml-файла в секундах, по-умолчанию 60*60*24
+	 */
+	public function __construct($locale = self::LOCALE_RU, $cacheFolder = null, $cacheDuration = 60*60*24)
 	{
 		$this->locale = strtolower(substr($locale, 0, 2));
-		$this->cacheFolder = $cacheFolder;
-	}
 
+		if($this->locale != self::LOCALE_RU)
+			$this->locale = self::LOCALE_EN;
+
+
+		if($cacheFolder)
+		{
+			$this->cacheDuration = $cacheDuration;
+			$this->cacheFolder = $cacheFolder;
+		}
+	}
 
 	/**
 	 * Возвращает локаль календаря
@@ -59,7 +86,6 @@ class RussianCalendar
 	{
 		return $this->locale;
 	}
-
 
 	/**
 	 * Возвращает путь к директории для кэширования xml-файлов.
@@ -84,64 +110,34 @@ class RussianCalendar
 	{
 		if($this->locale == self::LOCALE_RU)
 			$url = 'http://xmlcalendar.ru/data/ru/'.$year.'/calendar.xml';
-		elseif($this->locale == self::LOCALE_EN)
-			$url = 'http://xmlcalendar.ru/data/ru/'.$year.'/calendar.en.xml';
 		else
-			$this->throwException("Invalid russian calendar locale.");
+			$url = 'http://xmlcalendar.ru/data/ru/'.$year.'/calendar.en.xml';
+
+		return $url;
 	}
 
 	/**
-	 * Возвращает имя локального файла для каледаря с годом $year
-	 * для текущего момента времени.
-	 * Новый файл будет для каждой недели.
-	 * Соответственно код будет получать обновленные данные календаря,
-	 * каждую неделю.
-	 *
-	 * @param string $year год календаря
+	 * Возвращает путь к файлу с кэшем
+	 * @param string $year
 	 * @return string
 	 */
-	protected function getLocalXml($year)
+	protected function getCacheFile($year)
 	{
 		$cacheFolder = $this->getCacheFolder();
 
-		return 'calendar-'.$year.'-loaded'
-
-			.date('Y.m-').'w'.date('W') // это можно вынести в настройки - как часто обновлять кэш
-
-			.'.'.$this->locale.'.xml';
+		return $cacheFolder
+			.DIRECTORY_SEPARATOR
+			.'calendar-'.$year.'-'.$this->locale.'.cache';
 	}
-
-
 
 	/**
-	 * Включает кэширование. Файл полученный на xmlcalendar.ru
-	 * копируется в локальную директорию.
-	 * @return $this
+	 * Возвращает время хранения кэша в секундах
+	 * @return int
 	 */
-	public function cache()
+	public function getCacheDuration()
 	{
-		$cacheFolder = $this->getCacheFolder();
-
-		if($cacheFolder)
-		{
-			$this->cacheEnable = true;
-		}
-		return $this;
+		return $this->cacheDuration;
 	}
-
-
-
-
-	/**
-	 * Выбрасывает исключение
-	 * @param string $message
-	 * @throws \Exception
-	 */
-	public function throwException($message)
-	{
-		throw new \RussianCalendarException($message);
-	}
-
 
 	/**
 	 * Ковертирует входящую дату в timestamp.
@@ -162,49 +158,110 @@ class RussianCalendar
 	}
 
 
+	/**
+	 * Выплняет загрузку данных календаря
+	 * @param string $year
+	 * @return array
+	 */
 	protected function loadCalendarData($year)
 	{
-		if($this->cacheEnable)
+		if($this->getCacheDuration())
 		{
-			$localFile = $this->getLocalXml($year);
-			$cache = false;
+			$cacheFile = $this->getCacheFile($year);
+			$duration  = $this->getCacheDuration();
 
-			if(file_exists($localFile))
+			if(file_exists($cacheFile))
 			{
-				$xmlfile = $localFile;
+				// есть файл кэша
+				// надо открыть его
+				$cache = file_get_contents($cacheFile);
+
+				if(empty($cache))
+				{
+					$this->throwException('Fails read cache file.');
+				}
+				else
+				{
+					list($createTime, $xmlContent) = unserialize($cache);
+
+					if(time() > ($createTime + $duration))
+					{
+						// кэш устарел
+						// надо загрузить xml с сервера и сделать кэш
+						$serverFile = $this->getCalendarXml($year);
+						$xmlContent = $this->getXmlContent($serverFile);
+						$this->createCache($cacheFile, $xmlContent);
+						return $this->parse($xmlContent, $year);
+					}
+					else
+					{
+						// кэш валиден, можно использовать его
+						return $this->parse($xmlContent, $year);
+					}
+				}
 			}
 			else
 			{
-				$remoteFile = $this->getCalendarXml($year);
-				$cache = true;
+				// нет файла каша
+				// надо загрузить xml с сервера и сделать кэш
+				$serverFile = $this->getCalendarXml($year);
+				$xmlContent = $this->getXmlContent($serverFile);
+				$this->createCache($cacheFile, $xmlContent);
+				return $this->parse($xmlContent, $year);
 			}
 		}
 		else
 		{
-			$xmlfile = $this->getCalendarXml($year);
-		}
-
-
-
-
-
-		$xml = file_get_contents($xmlfile);
-
-		if(empty($xml))
-		{
-			$this->throwException("Fails get content $xmlfile.");
-		}
-		else
-		{
-			if($cache)
-			{
-				file_put_contents($localFile, $xml);
-			}
-
-			return $this->parse($xml, $year);
+			// кэш не используется
+			// надо загрузить xml с сервера и сразу распарсить
+			$serverFile = $this->getCalendarXml($year);
+			$xmlContent = $this->getXmlContent($serverFile);
+			return $this->parse($xmlContent, $year);
 		}
 	}
 
+	/**
+	 * Метод выполняет чтение xml-файла для получения контента.
+	 * @param string $filename
+	 * @return string
+	 */
+	protected function getXmlContent($filename)
+	{
+		$xmlContent = file_get_contents($filename);
+
+		if(empty($xmlContent))
+		{
+			$this->throwException("Fails get content $filename");
+		}
+		else
+		{
+			return $xmlContent;
+		}
+	}
+
+
+	/**
+	 * Метод выполняет сохранение файла кэша
+	 * @param string $cacheFile путь к файлу, в который будет записан кэш
+	 * @param string $xmlContent контент из xml-файла
+	 * @return TRUE вслучае успеха, иначе выбрасывает исключение
+	 */
+	protected function createCache($cacheFile, $xmlContent)
+	{
+		$cache = serialize(array(
+			time(),
+			$xmlContent
+		));
+
+		if(file_put_contents($cacheFile, $cache, LOCK_EX))
+		{
+			return true;
+		}
+		else
+		{
+			$this->throwException("Fails create cache file.");
+		}
+	}
 
 	/**
 	 * Выполняет разбор XML-файла.
@@ -231,17 +288,14 @@ class RussianCalendar
 				$this->throwException("Failed to get a calendar year.");
 			}
 
-			$holidays= array();
+			$holidays = array();
 			$xml_holidays = $xml->getElementsByTagName('holiday');
 			foreach ($xml_holidays as $holiday)
 			{
 				$id = $holiday->getAttribute('id');
 				$title  = $holiday->getAttribute('title');
 
-				$holidays[$id] = array(
-					'id' => $id,
-					'title' => $title,
-				);
+				$holidays[$id] = $title;
 			}
 
 			$data = array();
@@ -254,7 +308,6 @@ class RussianCalendar
 				$h = $day->getAttribute('h'); // идентификатор праздника
 				$date = str_replace('.','-', $year.'.'.$d);
 
-				$holiday = null;
 				if(isset($holidays[$h]))
 					$holidayName = $holidays[$h];
 				else
@@ -267,9 +320,15 @@ class RussianCalendar
 				);
 			}
 
-
-			$this->data[$year] = $data;
-
+			if($data)
+			{
+				$this->data[$year] = $data;
+				return $data;
+			}
+			else
+			{
+				$this->throwException("Fails to get data.");
+			}
 		}
 		else
 		{
@@ -277,10 +336,27 @@ class RussianCalendar
 		}
 	}
 
+	/**
+	 * Возвращает данные календаря в виде массива
+	 * @param string $year
+	 * @return array
+	 */
+	protected function getCalendarData($year)
+	{
+		if(!isset($this->data[$year]))
+		{
+			$this->loadCalendarData($year);
+		}
+
+		if(isset($this->data[$year]))
+			return $this->data[$year];
+		else
+			$this->throwException("Fails to load data.");
+	}
 
 	/**
 	 * Возвращает TRUE, если $date праздник. Праздник это всегда выходной день.
-	 * @param int|string|DateTime $date дата в формате YYYY-MM-DD или DD.MM.YYYY
+	 * @param int|string|DateTime $date проверяемая дата
 	 * @return bool
 	 */
 	public function checkHoliday($date)
@@ -288,16 +364,11 @@ class RussianCalendar
 		$ts = $this->convertTimestamp($date);
 		$date = date('Y-m-d', $ts);
 		$year = date('Y', $ts);
+		$calendar = $this->getCalendarData($year);
 
-
-		$this->loadCalendarData($year);
-
-
-
-
-		if(isset($this->days[$date]))
+		if(isset($calendar[$date]))
 		{
-			if($this->days[$date]['t']==self::WEEKEND and $this->days[$date]['h'] != '')
+			if($calendar[$date]['t']==self::WEEKEND and $calendar[$date]['h'] != '')
 				return true;
 			else
 				return false;
@@ -306,6 +377,236 @@ class RussianCalendar
 			return false;
 	}
 
+	/**
+	 * Возвращает название праздника по дате, или пустую строку, если праздника нет.
+	 * @param int|string|DateTime $date проверяемая дата
+	 * @return string
+	 */
+	public function getHolidayName($date)
+	{
+		$ts = $this->convertTimestamp($date);
+		$date = date('Y-m-d', $ts);
+		$year = date('Y', $ts);
+		$calendar = $this->getCalendarData($year);
+
+		if(isset($calendar[$date]))
+		{
+			return $calendar[$date]['h'];
+		}
+		else
+		{
+			return '';
+		}
+	}
+
+	/**
+	 * Возращает TRUE, если $date выходной день (т.е. суббота, воскресенье или праздник,
+	 * выпавший на будний день или субботу или воскресенье).
+	 * Выходной день может не являться праздником.
+	 * @param int|string|DateTime $date проверяемая дата
+	 * @param array $weekends массив с днями недели, которые являются выходными (по умолчанию [0,6] - воскресенье, суббота)
+	 * @return bool
+	 */
+	public function checkWeekend($date, $weekends = array(0,6))
+	{
+		$ts = $this->convertTimestamp($date);
+		$date = date('Y-m-d', $ts);
+		$year = date('Y', $ts);
+		$calendar = $this->getCalendarData($year);
+
+		if(isset($calendar[$date]))
+		{
+			if($calendar[$date]['t']==self::WEEKEND)
+				return true;
+			else
+				return false;
+		}
+		else
+		{
+			$w = date('w', $ts);
+
+			if(in_array($w, $weekends))
+				return true;
+			else
+				return false;
+		}
+	}
+
+	/**
+	 * Возращает TRUE, если $date предпраздничный (короткий) РАБОЧИЙ день.
+	 * @param int|string|DateTime $date проверяемая дата
+	 * @return bool
+	 */
+	public function checkShortWorkingDay($date)
+	{
+		$ts = $this->convertTimestamp($date);
+		$date = date('Y-m-d', $ts);
+		$year = date('Y', $ts);
+		$calendar = $this->getCalendarData($year);
+
+		if(isset($calendar[$date]))
+		{
+			if($calendar[$date]['t'] == self::SHORT_DAY)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Возращает TRUE, если $date ПОЛНЫЙ РАБОЧИЙ день.
+	 * Если день рабочий, но короткий, метод вернет FALSE.
+	 *
+	 * Для простой проверки рабочего дня (рабочий/не рабочий) используйте метод checkWorkingDay($date).
+	 *
+	 * @param int|string|DateTime $date проверяемая дата
+	 * @param array $weekends массив с номерами дней недели, которые являются выходными (по умолчанию [0,6] - воскресенье, суббота)
+	 * @return bool
+	 */
+	public function checkFullWorkingDay($date, $weekends = array(0,6))
+	{
+		$ts = $this->convertTimestamp($date);
+		$date = date('Y-m-d', $ts);
+		$year = date('Y', $ts);
+		$calendar = $this->getCalendarData($year);
+
+		if(isset($calendar[$date]))
+		{
+			if($calendar[$date]['t'] == self::WORKING_DAY)
+				return true;
+			else
+				return false;
+		}
+		else
+		{
+			$w = date('w', $ts);
+
+			if(in_array($w, $weekends))
+				return false;
+			else
+				return true;
+		}
+	}
+
+	/**
+	 * Возвращает TRUE, если $date РАБОЧИЙ день (ПОЛНЫЙ или КОРОТКИЙ).
+	 *
+	 * @param int|string|DateTime $date проверяемая дата
+	 * @param array $weekends массив с номерами дней недели, которые являются выходными (по умолчанию [0,6] - воскресенье, суббота)
+	 * @return bool
+	 */
+	public function checkWorkingDay($date, $weekends = array(0,6))
+	{
+		return ($this->checkFullWorkingDay($date, $weekends) or $this->checkShortWorkingDay($date));
+	}
+
+	/**
+	 * Возвращает дату следующего рабочего дня.
+	 * @param int|string|DateTime $date дата относительно которой проверяем следующий рабочий день
+	 * @param array $weekends массив с номерами дней недели, которые являются выходными (по умолчанию [0,6] - воскресенье, суббота).
+	 * @return string Дата в формате YYYY-MM-DD
+	 */
+	public function getNextWorkingDay($date, $weekends = array(0,6))
+	{
+		$ts = $this->convertTimestamp($date);
+		do
+		{
+			$ts += 60*60*24;
+			$nextDate = date('Y-m-d', $ts);
+		}
+		while(!$this->checkWorkingDay($nextDate, $weekends));
+
+		return $nextDate;
+	}
+
+	/**
+	 * Возвращает массив дат последовательных выходных дней, в который входит $date.
+	 * Если $date не выходной день, то метод вернет пустой массив.
+	 *
+	 * @param int|string|DateTime $date дата относительно которой проверяем следующий рабочий день
+	 * @param array $weekends массив с номерами дней недели, которые являются выходными (по умолчанию [0,6] - воскресенье, суббота).
+	 * @param bool $fullArray если TRUE, то массив будет включать все даты, в том числ предшествующие и равную $date,
+	 *						  иначе только даты после $date.
+	 * @param string $format формат дат в возвращаемом массиве
+	 * @return array of string
+	 */
+	public function getWeekendDateArray($date, $weekends = array(0,6), $fullArray = true, $format = 'Y-m-d')
+	{
+		if($this->checkWeekend($date))
+		{
+			$ts = $this->convertTimestamp($date);
+
+			if($fullArray)
+			while($this->checkWeekend($ts, $weekends))
+			{
+				$ts -= 60*60*24;
+			}
+
+			$weekendDates = array();
+			do
+			{
+				$ts += 60*60*24;
+				$weekendDates[] = date($format, $ts);
+			}
+			while($this->checkWeekend($ts, $weekends));
+
+			unset($weekendDates[count($weekendDates)-1]);
+
+			return $weekendDates;
+		}
+		else
+			return array();
+	}
+
+	/**
+	 * Возвращает массив дат последовательных праздников, в который входит $date.
+	 * Если $date не праздник, то метод вернет пустой массив (даже если $date выходной день).
+	 *
+	 * @param int|string|DateTime $date дата относительно которой проверяем следующий рабочий день
+	 * @param bool $fullArray если TRUE, то массив будет включать все даты, в том числ предшествующие и равную $date,
+	 *						  иначе только даты после $date.
+	 * @param string $format формат дат в возвращаемом массиве
+	 * @return array of string
+	 */
+	public function getHolidayDateArray($date, $fullArray = true, $format = 'Y-m-d')
+	{
+		if($this->checkHoliday($date))
+		{
+			$ts = $this->convertTimestamp($date);
+
+			if($fullArray)
+			while($this->checkHoliday($ts))
+			{
+				$ts -= 60*60*24;
+			}
+
+			$holidayDates = array();
+			do
+			{
+				$ts += 60*60*24;
+
+				$holidayDates[] = date($format, $ts);
+			}
+			while($this->checkHoliday($ts));
+
+			unset($holidayDates[count($holidayDates)-1]);
+			return $holidayDates;
+		}
+		else
+			return array();
+	}
+
+	/**
+	 * Выбрасывает исключение
+	 * @param string $message
+	 * @throws \Exception
+	 */
+	public function throwException($message)
+	{
+		throw new RussianCalendarException($message);
+	}
 }
 
 class RussianCalendarException extends \Exception
