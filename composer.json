@@ -1,0 +1,23 @@
+{
+	"name": "gozoro/russian-calendar",
+	"description": "Производственный календарь РФ на основе xmlcalendar.ru. Russian working calendar based on the xmlcalendar.ru.",
+	"keywords":["Russian", "calendar", "working", "production", "working-calendar", "production-calendar",
+				"производственный", "календарь", "РФ", "производственный календарь", "производственный календарь РФ", "xmlcalendar", "xmlcalendar.ru"],
+	"homepage": "https://github.com/gozoro/russian-calendar",
+	"type": "library",
+	"license": "MIT",
+	"authors": [
+		{
+			"name": "Gozoro",
+			"email": "gozoro@yandex.ru"
+		}
+	],
+	"require": {
+		"php": ">=5.5.9"
+	},
+	"autoload": {
+		"psr-4": {
+			"gozoro\\russian_calendar\\": "src"
+		}
+	}
+}
