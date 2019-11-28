@@ -506,15 +506,16 @@ class RussianCalendar
 	 * Возвращает дату следующего рабочего дня.
 	 * @param int|string|DateTime $date дата относительно которой проверяем следующий рабочий день
 	 * @param array $weekends массив с номерами дней недели, которые являются выходными (по умолчанию [0,6] - воскресенье, суббота).
+	 * @param string $format формат даты возвращаемого значения
 	 * @return string Дата в формате YYYY-MM-DD
 	 */
-	public function getNextWorkingDay($date, $weekends = array(0,6))
+	public function getNextWorkingDay($date, $weekends = array(0,6), $format='Y-m-d')
 	{
 		$ts = $this->convertTimestamp($date);
 		do
 		{
 			$ts += 60*60*24;
-			$nextDate = date('Y-m-d', $ts);
+			$nextDate = date($format, $ts);
 		}
 		while(!$this->checkWorkingDay($nextDate, $weekends));
 
