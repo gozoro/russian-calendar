@@ -125,7 +125,7 @@ print_r($holidayArray);
 
 
 // Сколько дней осталось отдыхать?
-print count(holidayArray); // 6
+print count($holidayArray); // 6
 ```
 
 
