@@ -1,8 +1,7 @@
 # russian-calendar
 
-Russian working calendar based on the xmlcalendar.ru
 Производственный календарь РФ на основе xmlcalendar.ru.
-
+Russian working calendar based on the xmlcalendar.ru.
 
 
 
