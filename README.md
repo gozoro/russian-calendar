@@ -15,6 +15,10 @@ Russian working calendar based on the xmlcalendar.ru for PHP.
 	composer require gozoro/russian-calendar
 ```
 
+
+
+
+
 Использование
 -----
 ```php
@@ -38,6 +42,8 @@ print "СЛЕДУЮЩИЙ РАБОЧИЙ ДЕНЬ: ".$calendar->getNextWorkingDa
 ```
 
 
+
+
 **Про выходные дни**
 
 По-умолчанию выходными считаются суббота и воскресенье.
@@ -48,6 +54,8 @@ print "СЛЕДУЮЩИЙ РАБОЧИЙ ДЕНЬ: ".$calendar->getNextWorkingDa
 $my_weekends = [0]; // выходной только воскресенье, суббота рабочий день
 $calendar->checkWorkingDay($date, $my_weekends);
 ```
+
+
 
 
 **Про периоды**
@@ -130,6 +138,21 @@ print count($holidayArray); // 6
 
 
 
+**Про кэширование**
+
+По-умолчанию класс делает запросы к xmlcalendar.ru, для получения XML-файлов с данными.
+Чтобы класс не делал долгих запросов к сайту, можно закэшировать XML-файл локально.
 
 
+```php
+$cache_folder = '/var/www/site/runtime/xmlcalendar';
+$cache_duration = 60*60*24; // кэш файла на сутки
+$calendar = new RussianCalendar('ru', $cache_folder, $cache_duration);
+```
+
+**Названия праздников на английском**
+
+```php
+$calendar = new RussianCalendar('en');
+```
 
