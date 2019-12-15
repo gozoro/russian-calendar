@@ -22,7 +22,7 @@ Russian working calendar based on the xmlcalendar.ru for PHP.
 Использование
 -----
 ```php
-$calendar = new RussianCalendar('ru');
+$calendar = new \gozoro\russian_calendar\RussianCalendar('ru');
 
 $date = '2019-01-02';
 print "Дата: ".$date."\n";
@@ -147,12 +147,12 @@ print count($holidayArray); // 6
 ```php
 $cache_folder = '/var/www/site/runtime/xmlcalendar';
 $cache_duration = 60*60*24; // кэш файла на сутки
-$calendar = new RussianCalendar('ru', $cache_folder, $cache_duration);
+$calendar = new \gozoro\russian_calendar\RussianCalendar('ru', $cache_folder, $cache_duration);
 ```
 
 **Названия праздников на английском**
 
 ```php
-$calendar = new RussianCalendar('en');
+$calendar = new \gozoro\russian_calendar\RussianCalendar('en');
 ```
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace russian_calendar;
+namespace gozoro\russian_calendar;
 
 /**
  * Класс производственного календаря РФ.
