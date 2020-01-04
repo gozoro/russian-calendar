@@ -602,7 +602,7 @@ class RussianCalendar
 	/**
 	 * Выбрасывает исключение
 	 * @param string $message
-	 * @throws \Exception
+	 * @throws \RussianCalendarException
 	 */
 	public function throwException($message)
 	{
