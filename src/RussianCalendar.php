@@ -35,7 +35,11 @@ class RussianCalendar
 	 */
 	const LOCALE_EN = 'en';
 
-
+	/**
+	 * Локаль календаря. От нее зависит названия праздников, которые могут
+	 * выводиться на русском или английском языке.
+	 * @var string
+	 */
 	protected $locale;
 
 	/**
@@ -58,8 +62,24 @@ class RussianCalendar
 
 
 	/**
+	 * Значение для установки прав на файл кэша.
+	 * По умолчанию NULL - права будут заданы операционной системой.
+	 * В случае установки собственного значения, оно должно иметь ведущий ноль.
+	 * @var int
+	 */
+	public $fileMode;
+
+	/**
+	 * Значение для прав при создании новой директории для кэша.
+	 * Значение должно иметь ведущий ноль.
+	 * @var int
+	 */
+	public $dirMode = 0775;
+
+
+	/**
 	 * Класс производственного календаря РФ.
-	 * @param string $locale
+	 * @param string $locale локаль календаря
 	 * @param string|null $cacheFolder путь к директории для локального кэша xml-файлов календаря
 	 * @param int $cacheDuration время кэширования xml-файла в секундах, по-умолчанию 60*60*24
 	 */
@@ -73,7 +93,7 @@ class RussianCalendar
 
 		if($cacheFolder)
 		{
-			$this->cacheDuration = $cacheDuration;
+			$this->cacheDuration = (int)$cacheDuration;
 			$this->cacheFolder = $cacheFolder;
 		}
 	}
@@ -108,6 +128,7 @@ class RussianCalendar
 	 */
 	protected function getCalendarXml($year)
 	{
+		$year = (int)$year;
 		if($this->locale == self::LOCALE_RU)
 			$url = 'http://xmlcalendar.ru/data/ru/'.$year.'/calendar.xml';
 		else
@@ -123,6 +144,7 @@ class RussianCalendar
 	 */
 	protected function getCacheFile($year)
 	{
+		$year = (int)$year;
 		$cacheFolder = $this->getCacheFolder();
 
 		return $cacheFolder
@@ -136,7 +158,7 @@ class RussianCalendar
 	 */
 	public function getCacheDuration()
 	{
-		return $this->cacheDuration;
+		return (int)$this->cacheDuration;
 	}
 
 	/**
@@ -253,13 +275,30 @@ class RussianCalendar
 			$xmlContent
 		));
 
-		if(file_put_contents($cacheFile, $cache, LOCK_EX))
+
+		$cacheFolder = dirname($cacheFile);
+
+
+		if(!file_exists($cacheFolder))
 		{
+			if(!mkdir($cacheFolder, $this->dirMode, true))
+			{
+				$this->throwException("Failed to create directory $cacheFolder.");
+			}
+		}
+
+
+		if(@file_put_contents($cacheFile, $cache, LOCK_EX) != false)
+		{
+			if ($this->fileMode !== null) {
+				@chmod($cacheFile, $this->fileMode);
+			}
+
 			return true;
 		}
 		else
 		{
-			$this->throwException("Fails create cache file.");
+			$this->throwException("Fails to create cache file $cacheFile.");
 		}
 	}
 
@@ -332,7 +371,7 @@ class RussianCalendar
 		}
 		else
 		{
-			$this->throwException("Fails load xml content.");
+			$this->throwException("Fails to load xml content.");
 		}
 	}
 
