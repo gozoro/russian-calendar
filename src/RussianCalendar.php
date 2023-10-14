@@ -4,7 +4,7 @@ namespace gozoro\russian_calendar;
 
 /**
  * Класс производственного календаря РФ.
- * Класс работает с календарем с сайта xmlcalendar.ru
+ * Класс работает с календарем с сайта xmlcalendar.ru.
  *
  * @author gozoro <gozoro@yandex.ru>
  */
@@ -83,7 +83,7 @@ class RussianCalendar
 	 * @param string|null $cacheFolder путь к директории для локального кэша xml-файлов календаря
 	 * @param int $cacheDuration время кэширования xml-файла в секундах, по-умолчанию 60*60*24
 	 */
-	public function __construct($locale = self::LOCALE_RU, $cacheFolder = null, $cacheDuration = 60*60*24)
+	public function __construct($locale = self::LOCALE_RU, $cacheFolder = null, $cacheDuration = 86400)
 	{
 		$this->locale = strtolower(substr($locale, 0, 2));
 
@@ -313,9 +313,17 @@ class RussianCalendar
 		$xml= new \DOMDocument();
 		if($xml->loadXML($xmlContent))
 		{
-			$xml_calendars = $xml->getElementsByTagName('calendar');
-			$yearFromContent = $xml_calendars[0]->getAttribute('year');
+			/** @var DOMNodeList */
+			$calendarNodeList = $xml->getElementsByTagName('calendar');
 
+			if($calendarNodeList->length != 1)
+			{
+				$this->throwException("Fails calendar xml.");
+			}
+
+			/** @var DOMElement */
+			$calendarNode = $calendarNodeList->item(0);
+			$yearFromContent = $calendarNode->getAttribute('year');
 
 			if($year != $yearFromContent)
 			{
@@ -328,8 +336,9 @@ class RussianCalendar
 			}
 
 			$holidays = array();
-			$xml_holidays = $xml->getElementsByTagName('holiday');
-			foreach ($xml_holidays as $holiday)
+			$holidayNodeList = $calendarNode->getElementsByTagName('holiday');
+
+			foreach ($holidayNodeList as $holiday)
 			{
 				$id = $holiday->getAttribute('id');
 				$title  = $holiday->getAttribute('title');
@@ -338,9 +347,9 @@ class RussianCalendar
 			}
 
 			$data = array();
-			$xml_days = $xml->getElementsByTagName('day');
+			$dayNodeList = $calendarNode->getElementsByTagName('day');
 
-			foreach ($xml_days as $day)
+			foreach ($dayNodeList as $day)
 			{
 				$d = $day->getAttribute('d'); // дата 01.01
 				$t = $day->getAttribute('t'); // тип (см. константы)
@@ -653,4 +662,3 @@ class RussianCalendarException extends \Exception
 {
 
 }
-
