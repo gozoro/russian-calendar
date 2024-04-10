@@ -130,9 +130,9 @@ class RussianCalendar
 	{
 		$year = (int)$year;
 		if($this->locale == self::LOCALE_RU)
-			$url = 'http://xmlcalendar.ru/data/ru/'.$year.'/calendar.xml';
+			$url = 'https://raw.githubusercontent.com/xmlcalendar/xmlcalendar.github.io/main/data/ru/'.$year.'/calendar.xml';
 		else
-			$url = 'http://xmlcalendar.ru/data/ru/'.$year.'/calendar.en.xml';
+			$url = 'https://raw.githubusercontent.com/xmlcalendar/xmlcalendar.github.io/main/data/ru/'.$year.'/calendar.en.xml';
 
 		return $url;
 	}
