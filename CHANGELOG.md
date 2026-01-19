@@ -2,6 +2,14 @@
 
 
 
+#### v0.0.6 (2026-01-19)
+
+- add method getWeekendDates
+- method getWeekendDateArray is deprecated
+- add method getHolidayDates
+- method getHolidayDates is deprecated
+
+
 #### v0.0.5 (2024-04-10)
 
 - fix load path - change from  'http://xmlcalendar.ru/data/ru/....' to 'https://raw.githubusercontent.com/xmlcalendar/xmlcalendar.github.io/main/data/ru/...'
