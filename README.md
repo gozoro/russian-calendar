@@ -67,7 +67,7 @@ $calendar->checkWorkingDay($date, $my_weekends);
 $weekends = [0,6];
 
 // полный список
-print_r($calendar->getWeekendDateArray($date, $weekends, true);
+print_r($calendar->getWeekendDates($date, $weekends, true);
 
 //Array
 //(
@@ -84,7 +84,7 @@ print_r($calendar->getWeekendDateArray($date, $weekends, true);
 //)
 
 // только даты больше чем $date и даты в формате d.m.Y
-print_r($calendar->getWeekendDateArray($date, $weekends, false, 'd.m.Y');
+print_r($calendar->getWeekendDates($date, $weekends, false, 'd.m.Y');
 
 //Array
 //(
@@ -101,7 +101,7 @@ print_r($calendar->getWeekendDateArray($date, $weekends, false, 'd.m.Y');
 Получение списка дат праздничного периода
 ```php
 // полный список
-print_r($calendar->getHolidayDateArray($date, true);
+print_r($calendar->getHolidayDates($date, true);
 
 // Array
 //(
@@ -116,7 +116,7 @@ print_r($calendar->getHolidayDateArray($date, true);
 //)
 
 // только даты больше чем $date и даты в формате d.m.Y
-$holidayArray = $calendar->getHolidayDateArray($date, false, 'd.m.Y';
+$holidayArray = $calendar->getHolidayDates($date, false, 'd.m.Y';
 print_r($holidayArray);
 
 //Array
@@ -139,15 +139,15 @@ print count($holidayArray); // 6
 
 **Кэширование**
 
-По умолчанию для получения XML-файлов с данными класс делает запросы к xmlcalendar.ru.
+По умолчанию для получения XML-файлов с данными, класс делает запросы к `raw.githubusercontent.com/xmlcalendar/xmlcalendar.github.io/main/...`.
 Чтобы класс не делал долгих запросов к сайту, можно закэшировать XML-файл локально.
-Для этого в конструкторе нужно указать путь к деректории, куда будет скопирован XML-файл
+Для этого в конструкторе нужно указать путь к директории, куда будет скопирован XML-файл
 и время кэша в секундах.
 
 ```php
-$cache_folder = '/var/www/site/runtime/xmlcalendar';
-$cache_duration = 60*60*24; // кэш файла на сутки
-$calendar = new \gozoro\russian_calendar\RussianCalendar('ru', $cache_folder, $cache_duration);
+$cacheFolder = '/var/www/site/runtime/xmlcalendar';
+$cacheDuration = 60*60*24; // кэш файла на сутки
+$calendar = new \gozoro\russian_calendar\RussianCalendar('ru', $cacheFolder, $cacheDuration);
 ```
 
 **Названия праздников на английском**

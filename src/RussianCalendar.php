@@ -581,7 +581,7 @@ class RussianCalendar
 	 * @param string $format формат дат в возвращаемом массиве
 	 * @return array of string
 	 */
-	public function getWeekendDateArray($date, $weekends = array(0,6), $fullArray = true, $format = 'Y-m-d')
+	public function getWeekendDates($date, $weekends = array(0,6), $fullArray = true, $format = 'Y-m-d')
 	{
 		if($this->checkWeekend($date))
 		{
@@ -610,6 +610,17 @@ class RussianCalendar
 	}
 
 	/**
+	 * Метод устарел и будет удален в v1.0.0
+	 *
+	 * @see RussianCalendar::getWeekendDates()
+	 * @deprecated since v0.0.6
+	 */
+	public function getWeekendDateArray($date, $weekends = array(0,6), $fullArray = true, $format = 'Y-m-d')
+	{
+		return $this->getWeekendDates($date, $weekends, $fullArray, $format);
+	}
+
+	/**
 	 * Возвращает массив дат последовательных праздников, в который входит $date.
 	 * Если $date не праздник, то метод вернет пустой массив (даже если $date выходной день).
 	 *
@@ -619,7 +630,7 @@ class RussianCalendar
 	 * @param string $format формат дат в возвращаемом массиве
 	 * @return array of string
 	 */
-	public function getHolidayDateArray($date, $fullArray = true, $format = 'Y-m-d')
+	public function getHolidayDates($date, $fullArray = true, $format = 'Y-m-d')
 	{
 		if($this->checkHoliday($date))
 		{
@@ -646,6 +657,18 @@ class RussianCalendar
 		else
 			return array();
 	}
+
+	/**
+	 * Метод устарел и будет удален в v1.0.0
+	 *
+	 * @see RussianCalendar::getHolidayDates()
+	 * @deprecated since v0.0.6
+	 */
+	public function getHolidayDateArray($date, $fullArray = true, $format = 'Y-m-d')
+	{
+		return $this->getHolidayDates($date, $fullArray, $format);
+	}
+
 
 	/**
 	 * Выбрасывает исключение
