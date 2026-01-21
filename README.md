@@ -116,7 +116,7 @@ print_r($calendar->getHolidayDates($date, true);
 //)
 
 // только даты больше чем $date и даты в формате d.m.Y
-$holidayArray = $calendar->getHolidayDates($date, false, 'd.m.Y';
+$holidayArray = $calendar->getHolidayDates($date, false, 'd.m.Y');
 print_r($holidayArray);
 
 //Array
@@ -136,10 +136,25 @@ print count($holidayArray); // 6
 
 
 
+**Переносы выходных**
+
+Выходные могут перенести Постановлением Правительства РФ,
+например в 2025 году, с субботы 1 ноября на понедельник 3 ноября. 
+
+```php
+// С какой даты перенесен выходной день 2025-11-03?
+print $calendar->getWeekendFrom('2025-11-03'); // '2025-11-01'
+
+// На какую дату перенесен выходной день 2025-11-01?
+print $calendar->getWeekendTo('2025-11-01'); // '2025-11-03'
+```
+
+
+
 
 **Кэширование**
 
-По умолчанию для получения XML-файлов с данными, класс делает запросы к `raw.githubusercontent.com/xmlcalendar/xmlcalendar.github.io/main/...`.
+По умолчанию для получения XML-файлов с данными, класс делает запросы к `raw.githubusercontent.com/xmlcalendar/data/...`.
 Чтобы класс не делал долгих запросов к сайту, можно закэшировать XML-файл локально.
 Для этого в конструкторе нужно указать путь к директории, куда будет скопирован XML-файл
 и время кэша в секундах.
@@ -153,6 +168,23 @@ $calendar = new \gozoro\russian_calendar\RussianCalendar('ru', $cacheFolder, $ca
 **Названия праздников на английском**
 
 ```php
-$calendar = new \gozoro\russian_calendar\RussianCalendar('en');
+$calendar = new \gozoro\russian_calendar\RussianCalendar('ru:en');
 ```
 
+
+**Производственные календари других стран**
+
+```php
+
+// Казахстан
+$calendar = new \gozoro\russian_calendar\RussianCalendar('kz');
+
+// Беларусь
+$calendar = new \gozoro\russian_calendar\RussianCalendar('by');
+
+// Узбекистан
+$calendar = new \gozoro\russian_calendar\RussianCalendar('uz');
+
+// Украина
+$calendar = new \gozoro\russian_calendar\RussianCalendar('uk');
+```

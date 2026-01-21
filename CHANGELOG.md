@@ -1,6 +1,14 @@
 ## ChangeLog
 
 
+#### v1.0.0 (2026-01-21)
+
+- rename convertTimestamp to parseDate
+- change locale to country
+- add method getSourcePublicUrl
+- add method getWeekendFrom
+- add method getWeekendTo
+
 
 #### v0.0.6 (2026-01-19)
 
